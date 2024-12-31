@@ -1,0 +1,39 @@
+编写日志：
+第一次编写：完善服务器基本收发功能，确定头文件大概引用范围。
+第二次编写，完善客户端基本收发功能，编写服务器广播功能，确定未来功能范围。
+第三次编写，完善客户端注册功能，优化各个功能间的判断条件，优化判断是否卡死，完善服务端mysql数据库，提供与服务器进行客户机的注册、登录认证等功能。
+第四次编写，修复了各个功能的bug，完成了登录后才有权限查看使用更深层次权限功能的限制，找到了无法立刻选择下一个选项的问题所在
+第五次编写,更改底层模型为事件选择模型,修复了登录功能的bug,可以正常识别服务器返回的登录回显,并置位登录状态码1.
+
+
+
+灵感:对登录状态进行加密验证,,服务端加密一串能够被客户端验证的密文,使得客户端验证是否正确登录
+
+CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)handle_client, (LPVOID)(client_count - 1), 0, NULL);
+报错cast to pointer from integer of different size [-Wint-to-pointer-cast]
+int 在32bit和64bit系统中都占4个字节，但是32bit指针占4个字节，64bit指针则占8个字节，因此出现此问题了。
+
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp 
+D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe 
+-lwsock32 -lws2_32 
+-I D:\VScodeTest\TCPIP\final 
+-I D:\msys\home\YYDS\gmp-6.2.0 
+-I "c:/Program Files/MySQL/MySQL Server 9.1/include" 
+-L D:\msys\home\YYDS\gmp-6.2.0\.libs 
+-L "c:/Program Files/MySQL/MySQL Server 9.1/lib" 
+-lgmp 
+-lmysql 
+-fpermissive
+
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp 
+-o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 "c:\Program Files\MySQL\MySQL Server 9.1\include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs "c:\Program Files\MySQL\MySQL Server 9.1\lib" -l gmp -lmysql -fpermissive
+
+vscode的C语言环境无法配置带有空格的路径，我们只能通过在cmd中对带空格路径加上引号才能正常编译，在编译环境中配置了mysql、gmp、winsock的环境配置。
+
+
+正确：
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -I "c:/Program Files/MySQL/MySQL Server 9.1/include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs -L "c:/Program Files/MySQL/MySQL Server 9.1/lib" -lgmp -lmysql -fpermissive
+
+
+在登录功能设计上，我发现当服务器无法正常返回值时，客户端会卡死在等待服务器返回值这个过程中，为了避免此情况，我们可以设计一个超时退出功能
+
