@@ -1,0 +1,47 @@
+// 生成RSA密钥对并发送给服务器
+void generate_rsa_keypair_and_send(SOCKET server_socket);
+
+// 使用DES加密消息
+char *encryptmsg(char *plaintext, char *cipher);
+
+// 使用DES解密消息
+char *decryptmsg(char *cipher, char *decrypted);
+
+// 申请并解密DES密钥1(未采用)
+void receive_des_key(SOCKET client_socket);
+
+// 申请并解密DES密钥2(采用)
+void receive_and_decrypt_des_key(SOCKET clientSock);
+
+// 注册用户
+void register_user();
+
+// 登录用户
+int login_user();
+
+// 发送消息
+void send_message();
+
+// 发送群聊消息的线程函数
+DWORD WINAPI send_group_messages(LPVOID lpParam);
+
+// 接收消息的线程函数
+DWORD WINAPI receive_messages(LPVOID lpParam);
+
+// 创建群聊
+void create_group();
+
+// 列出群聊
+void list_groups();
+
+// 加入群聊
+void enter_group();
+
+// 删除群聊
+void delete_group();
+
+// 显示群聊菜单
+void display_group_menu();
+
+// 显示主菜单
+void display_main_menu();

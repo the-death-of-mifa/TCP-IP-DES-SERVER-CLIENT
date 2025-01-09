@@ -14,7 +14,6 @@
 #include <algorithm>
 #include "RSA.h"
 #include "des.h"
-#include "md5.h"
 #include <D:\msys\home\YYDS\gmp-6.2.0\gmp.h>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -55,21 +54,9 @@ void close_database()
     mysql_close(conn);
 }
 
-// MD5的各种函数/定义起始
-void MD5Hash(const char *input, char *output)
-{
-    MD5_CTX ctx;
-    unsigned char digest[16];
-    MD5Init(&ctx);
-    MD5Update(&ctx, (unsigned char *)input, strlen(input));
-    MD5Final(&ctx, digest);
+// RSA的各种函数/定义起始
 
-    for (int i = 0; i < 16; ++i)
-    {
-        sprintf(&output[i * 2], "%02x", digest[i]);
-    }
-}
-// MD5的各种函数/定义结束
+// RSA的各种函数/定义结束
 
 // DES的各种函数/定义起始
 // 生成64位随机密钥
@@ -210,10 +197,10 @@ void add_client_socket(SOCKET clientSock)
 {
     if (clients.find(clientSock) != clients.end())
     {
-        printf("客户端 %llu 已经存在\n", clientSock);
+        printf("客户端 %d 已经存在\n", clientSock);
         return;
     }
-    printf("客户端 %llu 连接成功\n", clientSock);
+    printf("客户端 %d 连接成功\n", clientSock);
     clientinfo clientinfo;                // 创建一个clientinfo结构体
     clientinfo.clientSocket = clientSock; // 将客户端套接字赋值给结构体
     clients[clientSock] = clientinfo;
@@ -264,12 +251,8 @@ void send_to_all_clients(char *message)
 int register_user(const char *username, const char *password)
 {
     char query[256];
-    char hashed_password[33]; // 32个字符 + 1个空字符
-    MD5Hash(password, hashed_password);
-    printf("哈希运算后的密码: %s\n", hashed_password);
     memset(query, 0, sizeof(query));
-    sprintf(query, "INSERT INTO users (username, password) VALUES ('%s', '%s')", username, hashed_password);
-
+    sprintf(query, "INSERT INTO users (username, password) VALUES ('%s', '%s')", username, password);
     if (mysql_query(conn, query))
     {
         fprintf(stderr, "用户注册失败: %s\n", mysql_error(conn));
@@ -285,25 +268,19 @@ int register_user(const char *username, const char *password)
 int authenticate_user(const char *username, const char *password)
 {
     char query[256];
-    char hashed_password[33]; // 32个字符 + 1个空字符
-    MD5Hash(password, hashed_password);
-    printf("哈希运算后的密码: %s\n", hashed_password);
     memset(query, 0, sizeof(query));
-    sprintf(query, "SELECT * FROM users WHERE username='%s' AND password='%s'", username, hashed_password);
-
+    sprintf(query, "SELECT * FROM users WHERE username='%s' AND password='%s'", username, password);
     if (mysql_query(conn, query))
     {
         fprintf(stderr, "认证失败 %s\n", mysql_error(conn));
         return 0;
     }
-
     MYSQL_RES *result = mysql_store_result(conn);
     if (result == NULL)
     {
         fprintf(stderr, "mysql_store_result failed: %s\n", mysql_error(conn));
         return 0;
     }
-
     int rows = mysql_num_rows(result);
     mysql_free_result(result);
     return rows > 0;
@@ -524,7 +501,7 @@ void handle_events(WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal)
                                 strcpy(clients[sockArray[i]].rsa_n, rsa_n);
                                 strcpy(clients[sockArray[i]].rsa_e, rsa_e);
                                 char success_msg[256];
-                                sprintf(success_msg, "[系统消息] 客户端 %llu 的RSA公钥已存储\n", sockArray[i]);
+                                sprintf(success_msg, "[系统消息] 客户端 %d 的RSA公钥已存储\n", sockArray[i]);
                                 send(sockArray[i], success_msg, strlen(success_msg), 0);
                                 printf("%s", success_msg);
                                 memset(success_msg, 0, sizeof(success_msg));
@@ -543,7 +520,7 @@ void handle_events(WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal)
                             {
                                 key[index] = clients[sockArray[i]].des_key[index];
                             }
-                            printf("客户端套接字: %llu, DES密钥: ", sockArray[i]);
+                            printf("客户端套接字:%d DES密钥:", sockArray[i]);
                             for (int j = 0; j < 64; j++)
                             {
                                 printf("%d", key[j]);
@@ -600,7 +577,7 @@ void handle_events(WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal)
                                 memset(key, 0, sizeof(key));
                                 strcpy(clients[sockArray[i]].username, username);
                                 printf("用户 %s 已登录\n", username);
-                                printf("服务器套接字: %llu\n", sockArray[i]);
+                                printf("服务器套接字: %d\n", sockArray[i]);
                             }
                             else
                             {

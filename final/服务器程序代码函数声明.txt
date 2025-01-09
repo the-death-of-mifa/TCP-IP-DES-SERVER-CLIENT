@@ -1,0 +1,53 @@
+// 初始化数据库连接
+void initialize_database();
+
+// 关闭数据库连接
+void close_database();
+
+// 计算输入字符串的MD5哈希值
+void MD5Hash(const char *input, char *output);
+
+// 生成64位随机DES密钥并发送给客户端
+void generateRandom_DESKey_and_send(SOCKET clientSock);
+
+// 使用DES加密消息
+char *encryptmsg(char *plaintext, char *cipher);
+
+// 使用DES解密消息
+char *decryptmsg(char *cipher, char *decrypted);
+
+// 添加客户端套接字到客户端列表
+void add_client_socket(SOCKET clientSock);
+
+// 从客户端列表中移除客户端套接字
+void remove_client_socket(int clientSock);
+
+// 向所有客户端发送消息
+void send_to_all_clients(char *message);
+
+// 注册新用户并存储密码MD5哈希值
+int register_user(const char *username, const char *password);
+
+// 验证客户身份,计算出客户端密码的MD5哈希值与数据库哈希值作对比
+int authenticate_user(const char *username, const char *password);
+
+// 创建新的群聊
+int create_group(const char *group_name, const char *creator);
+
+// 列出所有群聊
+void list_groups(SOCKET client_sock);
+
+// 删除群聊
+int delete_group(SOCKET client_sock, char *group_id, const char *username);
+
+// 加入群聊
+int enter_group(SOCKET client_sock, const char *group_id, const char *username);
+
+// 初始化服务器套接字
+void initialize_socket(SOCKET &sListen, WSAEVENT &myevent, USHORT nPort, WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal);
+
+// 处理网络事件
+void handle_events(WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal);
+
+// 清理资源
+void cleanup(WSAEVENT eventArray[], SOCKET sockArray[], int nEventTotal);

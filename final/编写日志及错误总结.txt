@@ -1,0 +1,97 @@
+编写日志：
+第一次编写：完善服务器基本收发功能，确定头文件大概引用范围。
+第二次编写，完善客户端基本收发功能，编写服务器广播功能，确定未来功能范围。
+第三次编写，完善客户端注册功能，优化各个功能间的判断条件，优化判断是否卡死，完善服务端mysql数据库，提供与服务器进行客户机的注册、登录认证等功能。
+第四次编写，修复了各个功能的bug，完成了登录后才有权限查看使用更深层次权限功能的限制，找到了无法立刻选择下一个选项的问题所在
+第五次编写,更改底层模型为事件选择模型,修复了登录功能的bug,可以正常识别服务器返回的登录回显,并置位登录状态码1.
+第六次编写,修复了登录状态bug,需要识别登录状态才能使用的功能的认证环节得到了完善,同时包括登录功能的BUG修复.
+第七次编写,完善了服务端发送消息的判断规则,对于LOGIN 和 register消息不再转发给其他客户端等.
+第八次编写,创建了群聊数据库,新增了服务端适配对客户端之间提供群聊功能,修复部分判断消息是否为所需的BUG.
+第九次编写,修复了服务端和客户端关于群聊功能的bug,客户端实现了通过选择模型正常收到服务端发送过来的例如群聊列表等消息.
+第十次编写,创建多个线程以应对群聊接受和发送数据的多线程处理,设计检查键盘输入的算法逻辑以能够在等待服务端消息的同时能够发送消息给服务端,设计群聊退出再衔接加入的过程中保证数据的一致性.
+第十一次编写,优化了删除群聊功能,使得服务端能够正常合理的返回删除失败或者删除成功的回复,删除群聊的操作权限只有创建者,其他用户无法删除某一创建者独有的群聊.
+第十二次编写,将DES和RSA的源代码修改然后写了DES和RSA的头文件,编写RSATEST测试了是否可用,修改服务端存储客户端的结构体和修改其余有关代码
+第十三次编写,在服务端和客户端程序加入了RSA和DES,由客户端生成RSA密钥对,把公钥发送给服务端,服务端拿到公钥后随机生成DES密钥 用公钥加密后发送给客户端,客户端拿到后即可正常使用功能
+第十四次编写,优化DES加密逻辑,在登录前就要生成RSA密钥对并发送和申请获取DES密钥,修复RSA每次生成都是一样的密钥对的情况.
+第十五次编写,优化所有涉及到加密解密处的缓存问题,尽量保证不出现乱码,目前仍有几率出现乱码问题尚未解决,但能正常使用.
+第十六次编写,编写md5头文件,服务端增加登录注册中密码的md5运算功能,使存储在数据库的密码均为md5运算后的结果,客户端登录时哈希运算后对比哈希值.
+
+
+
+要点:
+在群聊时输入exit退出到群聊菜单也就是二级菜单,随后再次选择加入群聊需要再数据库内同步更新客户端的用户信息,否则会显示已在群聊内的故障也就是数据库存在这个用户产生了冲突
+需要在exit的时候删除对应用户的数据库实体,这样才能做到不冲突,同时在设计这样的代码时需要考虑到各种各样的逻辑问题,例如置位退出群聊状态的变量来辅助我们设计
+
+实现两个及两个以上客户端群聊功能，并且是由一个客户端在菜单内选择群聊功能，
+随后进入子菜单，群聊子菜单内具备创建群聊并给群聊取名、群聊列表显示群聊有哪些并用群聊ID1,2,3等标识出来且增加和删除的时候1,2,3排序不被打乱，
+进入群聊通过输入群聊ID进入，
+群聊创建者能够删除群聊的功能。
+在群聊内给群聊管理者的消息进行标识，比如“[群聊管理][用户：用户名]：hello”，群聊时输入EXIT或退出则退出群聊回到主菜单。
+
+c语言的extern关键字 我在主程序里调用了用extern在头文件内声明的其他程序的一个变量，主程序内去更改这个变量的值是能够提供给头文件声明的其他函数进行运算的
+例如我调用的主程序某个函数内更改了头文件内extern声明的key的值，然后再在这个函数内接着调用了头文件声明的加密或者解密函数，这个key能参与后面调用的函数的运算
+
+extern关键字声明一个变量的存在，而不分配内存,可以在主程序中通过extern访问并修改它的值，这些修改会影响到所有引用该变量的代码。
+如果在头文件中通过extern声明一个变量（如extern int key;），并在某个源文件中定义了,那么对于源文件和主程序而言都是一种全局变量.
+
+生成RSA密钥对的时候我发现每次生成的都是一样的,经过检查，在rsa源代码中可以将随机生成种子定为当前时间戳.
+
+hash服务端存储的密码 注册时服务端收到客户端的密码进行hash并存储 当客户端选择登录时传递的密码经过加密 服务端解密后再将其hash后对比存储的hash值.
+
+CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)handle_client, (LPVOID)(client_count - 1), 0, NULL);
+报错cast to pointer from integer of different size [-Wint-to-pointer-cast]
+int 在32bit和64bit系统中都占4个字节，但是32bit指针占4个字节，64bit指针则占8个字节，因此出现此问题了。
+
+在登录功能设计上，我发现当服务器无法正常返回值时，客户端会卡死在等待服务器返回值这个过程中，为了避免此情况，我们可以设计一个超时退出功能
+
+在设计RSA和DES结合的时候出现致命错误,一开始功能都正常运行,但我在多次实验的时候发现了公钥完全一致的情况,于是我修改了RSA源程序代码中生成随机种子的代码
+就在此处出现了错误,可我当时尚未意识到,于是花了三到四个小时去解决主程序的报错,结果主程序的报错正是源于RSA程序的源代码.
+
+修改逻辑登录前获取rsa和des密钥.
+
+加密方案:
+方案1 服务端只负责转发,客户端自己生成的分组密钥不存储在服务端,服务端将客户端的分组密钥RSA加密后转发给其他客户端,
+方案2 服务端存储和生成客户端的密钥 解密后再用另一客户端的分组密钥加密随后发送
+采用方案2.
+
+
+编译环境配置:
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp 
+D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe 
+-lwsock32 -lws2_32 
+-I D:\VScodeTest\TCPIP\final 
+-I D:\msys\home\YYDS\gmp-6.2.0 
+-I "c:/Program Files/MySQL/MySQL Server 9.1/include" 
+-L D:\msys\home\YYDS\gmp-6.2.0\.libs 
+-L "c:/Program Files/MySQL/MySQL Server 9.1/lib" 
+-lgmp 
+-lmysql 
+-fpermissive
+
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp 
+-o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 "c:\Program Files\MySQL\MySQL Server 9.1\include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs "c:\Program Files\MySQL\MySQL Server 9.1\lib" -l gmp -lmysql -fpermissive
+
+vscode的C语言环境无法配置带有空格的路径，我们只能通过在cmd中对带空格路径加上引号才能正常编译，在编译环境中配置了mysql、gmp、winsock的环境配置。
+
+
+正确：
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -I "c:/Program Files/MySQL/MySQL Server 9.1/include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs -L "c:/Program Files/MySQL/MySQL Server 9.1/lib" -lgmp -lmysql -fpermissive
+
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\finaltest\TCPIPchatserver.cpp D:\VScodeTest\TCPIP\finaltest\des.cpp -o D:\VScodeTest\TCPIP\finaltest\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -I "c:/Program Files/MySQL/MySQL Server 9.1/include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs -L "c:/Program Files/MySQL/MySQL Server 9.1/lib" -lgmp -lmysql -fpermissive
+
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\finaltest\TCPIPchatserver1.cpp D:\VScodeTest\TCPIP\finaltest\des.cpp -o D:\VScodeTest\TCPIP\finaltest\TCPIPchatserver1.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -I "c:/Program Files/MySQL/MySQL Server 9.1/include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs -L "c:/Program Files/MySQL/MySQL Server 9.1/lib" -lgmp -lmysql -fpermissive
+
+final destest
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\destest.cpp D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\destest.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -L D:\msys\home\YYDS\gmp-6.2.0\.libs -l gmp -l gmpxx -fpermissive
+
+final TCPCLIENT
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatclient.cpp D:\VScodeTest\TCPIP\final\RSA.cpp D:\VScodeTest\TCPIP\final\des.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatclient.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -L D:\msys\home\YYDS\gmp-6.2.0\.libs -l gmp -l gmpxx -fpermissive
+
+final TCPIPchatserver
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\TCPIPchatserver.cpp D:\VScodeTest\TCPIP\final\RSA.cpp D:\VScodeTest\TCPIP\final\des.cpp D:\VScodeTest\TCPIP\final\md5.cpp -o D:\VScodeTest\TCPIP\final\TCPIPchatserver.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -I "c:/Program Files/MySQL/MySQL Server 9.1/include" -L D:\msys\home\YYDS\gmp-6.2.0\.libs -L "c:/Program Files/MySQL/MySQL Server 9.1/lib" -lgmp -lmysql -fpermissive
+
+final rsatest
+cmd /c chcp 65001>nul && C:\mingw64\bin\g++.exe -fdiagnostics-color=always -g D:\VScodeTest\TCPIP\final\rsatest.cpp D:\VScodeTest\TCPIP\final\RSA.cpp -o D:\VScodeTest\TCPIP\final\rsatest.exe -lwsock32 -lws2_32 -I D:\msys\home\YYDS\gmp-6.2.0 -L D:\msys\home\YYDS\gmp-6.2.0\.libs -l gmp -l gmpxx -fpermissive
+
+D:\VScodeTest\TCPIP\final\RSA.cpp D:\VScodeTest\TCPIP\final\des.cpp D:\VScodeTest\TCPIP\final\sha1.cpp
+
