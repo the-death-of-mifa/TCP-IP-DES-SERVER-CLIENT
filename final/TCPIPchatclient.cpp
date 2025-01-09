@@ -23,6 +23,12 @@ int exit_group_chat = 0; // 新的标志变量
 int rsa_correct = 0;
 int des_correct = 0;
 
+void set_console_color(int color)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
+}
+
 // RSA的各种函数/定义起始
 
 #define RSA_KEY_BITS 512
@@ -46,7 +52,9 @@ void generate_rsa_keypair_and_send(SOCKET server_socket)
     mpz_get_str(n_str, 16, n);                               // 将n转换为16进制字符串
     mpz_get_str(e_str, 16, e);                               // 将e转换为16进制字符串
     sprintf(buffer, "RSA_KEY %s %s 无需解密", n_str, e_str); // 将n和e拼接成字符串
+    set_console_color(10);
     printf("发送RSA公钥: %s %s\n", n_str, e_str);
+    set_console_color(15);
     send(server_socket, buffer, strlen(buffer), 0); // 发送n和e
 
     while (1)
@@ -72,7 +80,9 @@ void generate_rsa_keypair_and_send(SOCKET server_socket)
                 if (bytes_received > 0)
                 {
                     buffer[bytes_received] = '\0';
+                    set_console_color(10);
                     printf("rsa服务器响应: %s\n", buffer);
+                    set_console_color(15);
                     if (strstr(buffer, "已存储") != NULL)
                     {
                         rsa_correct = 1;
@@ -81,7 +91,9 @@ void generate_rsa_keypair_and_send(SOCKET server_socket)
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12);
                     printf("服务器关闭连接。\n");
+                    set_console_color(15);
                     break;
                 }
                 else
@@ -89,12 +101,16 @@ void generate_rsa_keypair_and_send(SOCKET server_socket)
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12);
                         printf("recv would block\n");
+                        set_console_color(15);
                         continue;
                     }
                     else
                     {
+                        set_console_color(12);
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15);
                         break;
                     }
                 }
@@ -102,12 +118,16 @@ void generate_rsa_keypair_and_send(SOCKET server_socket)
         }
         else if (select_result == 0)
         {
+            set_console_color(12);
             printf("等待超时...\n");
+            set_console_color(15);
             continue;
         }
         else
         {
+            set_console_color(12);
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15);
             break;
         }
     }
@@ -234,7 +254,9 @@ void receive_des_key(SOCKET client_socket)
                     mpz_to_string(buffer, decrypted_msg); // 将大整数转换为字符串
                     mpz_clears(encrypted_msg, decrypted_msg, NULL);
                     buffer[bytes_received] = '\0';
+                    set_console_color(10);
                     printf("des服务器响应: %s\n", buffer);
+                    set_console_color(15);
                     if (strstr(buffer, "密钥生成成功") != NULL)
                     {
                         if (sscanf(buffer, "DES密钥生成成功: %s", keytemp) == 1) // 从服务器响应中提取DES密钥
@@ -249,14 +271,18 @@ void receive_des_key(SOCKET client_socket)
                         }
                         else
                         {
+                            set_console_color(12);
                             printf("des接收格式错误\n");
+                            set_console_color(15);
                         }
                     }
                     break; // 成功接收到数据后退出循环
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12);
                     printf("服务器关闭连接。\n");
+                    set_console_color(15);
                     break;
                 }
                 else
@@ -264,12 +290,16 @@ void receive_des_key(SOCKET client_socket)
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12);
                         printf("recv would block\n");
+                        set_console_color(15);
                         continue;
                     }
                     else
                     {
+                        set_console_color(12);
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15);
                         break;
                     }
                 }
@@ -277,12 +307,16 @@ void receive_des_key(SOCKET client_socket)
         }
         else if (select_result == 0)
         {
+            set_console_color(12);
             printf("等待超时...\n");
+            set_console_color(15);
             continue;
         }
         else
         {
+            set_console_color(12);
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15);
             break;
         }
     }
@@ -301,7 +335,9 @@ void receive_and_decrypt_des_key(SOCKET clientSock)
     sprintf(buffer, "DES_KEY");
     send(clientSock, buffer, strlen(buffer), 0);
 
+    set_console_color(10);
     printf("等待服务器响应...\n");
+    set_console_color(15);
 
     while (1)
     {
@@ -326,8 +362,9 @@ void receive_and_decrypt_des_key(SOCKET clientSock)
                 if (bytes_received > 0)
                 {
                     buffer[bytes_received] = '\0';
+                    set_console_color(10);
                     printf("服务器响应: %s\n", buffer);
-
+                    set_console_color(15);
                     if (strstr(buffer, "RSA加密后的DES密钥") != NULL)
                     {
                         if (sscanf(buffer, "RSA加密后的DES密钥: %s", keytemp) == 1) // 从服务器响应中提取DES密钥
@@ -339,24 +376,30 @@ void receive_and_decrypt_des_key(SOCKET clientSock)
                             mpz_powm(decrypted_msg, encrypted_msg, d, n);
                             mpz_get_str(buffer, 16, decrypted_msg); // 将大整数转换为16进制字符串
                             mpz_clears(encrypted_msg, decrypted_msg, NULL);
+                            set_console_color(10);
                             printf("RSA解密后的DES密钥: %s\n", buffer);
+                            set_console_color(15);
                             for (int i = 0; i < 8; i++)
                             {
                                 sscanf(&buffer[i * 2], "%2hhx", &tempkey[i]); // 两个字符转换为一个字节
                             }
                             BytesToBits((char *)tempkey, key); // 将字节转换为位
-                            printf(" DES密钥: ");
+                            set_console_color(10);
+                            printf("DES密钥: ");
                             for (int i = 0; i < 64; i++)
                             {
                                 printf("%d", key[i]);
                             }
                             printf("\n");
+                            set_console_color(15);
                             GenerateSubKeys(); // 生成子密钥
                             des_correct = 1;
                         }
                         else
                         {
+                            set_console_color(12);
                             printf("des接收格式错误\n");
+                            set_console_color(15);
                         }
                     }
 
@@ -364,7 +407,9 @@ void receive_and_decrypt_des_key(SOCKET clientSock)
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12);
                     printf("服务器关闭连接。\n");
+                    set_console_color(15);
                     break;
                 }
                 else
@@ -372,11 +417,13 @@ void receive_and_decrypt_des_key(SOCKET clientSock)
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12);
                         printf("recv would block\n");
                         continue;
                     }
                     else
                     {
+                        set_console_color(12);
                         printf("recv failed: %d\n", error_code);
                         break;
                     }
@@ -406,11 +453,12 @@ void register_user()
     fd_set read_fds;
     struct timeval timeout;
     int bytes_received;
+    set_console_color(14); // 提示信息颜色
     printf("请输入用户名: ");
     scanf("%s", username);
     printf("请输入密码: ");
     scanf("%s", password);
-
+    set_console_color(15); // 恢复默认颜色
     sprintf(buffer, "REGISTER %s %s", username, password);
     encryptmsg(buffer, encrypted);
     send(client_socket, encrypted, strlen(encrypted) + 512, 0);
@@ -441,12 +489,16 @@ void register_user()
                 {
                     decryptmsg(buffer, decrypted);
 
+                    set_console_color(10); // 正常信息颜色
                     printf("服务器响应: %s\n", decrypted);
-                    break; // 成功接收到数据后退出循环
+                    set_console_color(15); // 恢复默认颜色
+                    break;                 // 成功接收到数据后退出循环
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12); // 错误信息颜色
                     printf("服务器关闭连接。\n");
+                    set_console_color(15); // 恢复默认颜色
                     break;
                 }
                 else
@@ -454,12 +506,16 @@ void register_user()
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12); // 错误信息颜色
                         printf("recv would block\n");
+                        set_console_color(15); // 恢复默认颜色
                         continue;
                     }
                     else
                     {
+                        set_console_color(12); // 错误信息颜色
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15); // 恢复默认颜色
                         break;
                     }
                 }
@@ -467,12 +523,16 @@ void register_user()
         }
         else if (select_result == 0)
         {
+            set_console_color(12); // 错误信息颜色
             printf("等待超时...\n");
+            set_console_color(15); // 恢复默认颜色
             continue;
         }
         else
         {
+            set_console_color(12); // 错误信息颜色
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15); // 恢复默认颜色
             break;
         }
     }
@@ -485,11 +545,12 @@ int login_user()
     memset(buffer, 0, BUFFER_SIZE);
     memset(encrypted, 0, BUFFER_SIZE);
     memset(decrypted, 0, BUFFER_SIZE);
+    set_console_color(14); // 提示信息颜色
     printf("请输入用户名: ");
     scanf("%s", username);
     printf("请输入密码: ");
     scanf("%s", password);
-
+    set_console_color(15); // 恢复默认颜色
     sprintf(buffer, "LOGIN %s %s", username, password);
     encryptmsg(buffer, encrypted);
     send(client_socket, encrypted, strlen(encrypted) + 512, 0);
@@ -500,7 +561,9 @@ int login_user()
     Sleep(1000);
     if (is_logged_in == 1)
     {
+        set_console_color(10); // 正常信息颜色
         printf("登录成功！\n");
+        set_console_color(15); // 恢复默认颜色
         return 1;
     }
 
@@ -510,6 +573,7 @@ int login_user()
 void send_message()
 {
     char message[BUFFER_SIZE], encrypted[BUFFER_SIZE], decrypted[BUFFER_SIZE];
+    int count = 0;
     memset(message, 0, BUFFER_SIZE);
     memset(encrypted, 0, BUFFER_SIZE);
     memset(decrypted, 0, BUFFER_SIZE);
@@ -519,12 +583,19 @@ void send_message()
 
     while (true)
     {
-        printf("请输入消息: ");
-        scanf("%s", message);
-
+        set_console_color(14); // 提示信息颜色
+        if (count > 0)
+        {
+            printf("请输入消息: ");
+        }
+        // scanf("%s", message);
+        fgets(message, sizeof(message), stdin);
+        set_console_color(15); // 恢复默认颜色
         if (strncmp(message, "exit", 4) == 0)
         {
+            set_console_color(10); // 正常信息颜色
             printf("退出聊天。\n");
+            set_console_color(15); // 恢复默认颜色
             memset(message, 0, BUFFER_SIZE);
             break;
         }
@@ -562,13 +633,17 @@ void send_message()
                         }
                         else
                         {
+                            set_console_color(12); // 错误信息颜色
                             printf("recv failed: %d\n", error_code);
+                            set_console_color(15); // 恢复默认颜色
                             break;
                         }
                     }
                     else if (bytes_received == 0)
                     {
+                        set_console_color(12); // 错误信息颜色
                         printf("服务器关闭连接。\n");
+                        set_console_color(15); // 恢复默认颜色
                         break;
                     }
                     else
@@ -576,7 +651,16 @@ void send_message()
                         message[bytes_received] = '\0';
                         decryptmsg(message, decrypted);
 
+                        set_console_color(10); // 正常信息颜色
+
+                        if (count == 0)
+                        {
+                            count++;
+                            break;
+                        }
                         printf("服务器响应: %s\n", decrypted);
+                        count++;
+                        set_console_color(15); // 恢复默认颜色
                         break;
                     }
                 }
@@ -587,7 +671,9 @@ void send_message()
             }
             else
             {
+                set_console_color(12); // 错误信息颜色
                 printf("select failed: %d\n", WSAGetLastError());
+                set_console_color(15); // 恢复默认颜色
                 break;
             }
         }
@@ -619,8 +705,10 @@ DWORD WINAPI send_group_messages(LPVOID lpParam)
                     memset(encrypted, 0, BUFFER_SIZE);
                     encryptmsg(group_msg, encrypted);
                     send(client_socket, encrypted, strlen(encrypted) + 512, 0);
+                    set_console_color(12); // 设置错误信息颜色
                     printf("退出群聊\n");
-                    exit_group_chat = 1; // 设置标志变量
+                    set_console_color(15); // 恢复正常颜色
+                    exit_group_chat = 1;   // 设置标志变量
                     memset(input, 0, BUFFER_SIZE);
                     memset(group_msg, 0, BUFFER_SIZE);
                     memset(encrypted, 0, BUFFER_SIZE);
@@ -669,7 +757,9 @@ DWORD WINAPI receive_messages(LPVOID lpParam)
             int error_code = WSAGetLastError();
             if (error_code == WSAETIMEDOUT) // 超时错误
             {
+                set_console_color(12); // 设置错误信息颜色
                 printf("接收超时,未收到服务器响应。\n");
+                set_console_color(15); // 恢复正常颜色
             }
             else if (error_code == WSAEWOULDBLOCK) // 非阻塞模式下没有数据可接收
             {
@@ -678,14 +768,18 @@ DWORD WINAPI receive_messages(LPVOID lpParam)
             }
             else
             {
+                set_console_color(12); // 设置错误信息颜色
                 printf("recv failed: %d\n", error_code);
-                break; // 跳出循环
+                set_console_color(15); // 恢复正常颜色
+                break;                 // 跳出循环
             }
         }
         else if (bytes_received == 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("服务器关闭连接。\n");
-            break; // 跳出循环
+            set_console_color(15); // 恢复正常颜色
+            break;                 // 跳出循环
         }
         else // 接收到数据
         {
@@ -693,30 +787,37 @@ DWORD WINAPI receive_messages(LPVOID lpParam)
             {
                 memset(decrypted, 0, BUFFER_SIZE);
                 decryptmsg(buffer, decrypted);
+                set_console_color(10); // 设置正常信息颜色
                 printf("[系统消息]执行解密\n");
+                set_console_color(15); // 恢复正常颜色
             }
 
             if (strlen(decrypted) > 0 && is_logged_in == 0)
             {
-
                 const char *status = "登录成功";
                 const char *status2 = "登录失败";
                 if (strstr(decrypted, status) != NULL)
                 {
                     is_logged_in = 1;
+                    set_console_color(10); // 设置正常信息颜色
                     printf("%d\n", is_logged_in);
                     printf("服务器响应2: %s\n", decrypted);
+                    set_console_color(15); // 恢复正常颜色
                 }
                 else if (strstr(decrypted, status2) != NULL)
                 {
+                    set_console_color(12); // 设置错误信息颜色
                     printf("登录失败请重试。\n");
+                    set_console_color(15); // 恢复正常颜色
                 }
                 else if (strstr(decrypted, "群聊") != NULL)
                 {
                 }
                 else
                 {
+                    set_console_color(10); // 设置正常信息颜色
                     printf("服务器响应1: %s\n", decrypted);
+                    set_console_color(15); // 恢复正常颜色
                 }
             }
         }
@@ -765,12 +866,16 @@ void create_group()
                 {
                     buffer[bytes_received] = '\0';
                     decryptmsg(buffer, decrypted);
+                    set_console_color(10); // 设置正常信息颜色
                     printf("服务器响应: %s\n", decrypted);
-                    break; // 成功接收到数据后退出循环
+                    set_console_color(15); // 恢复正常颜色
+                    break;                 // 成功接收到数据后退出循环
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12); // 设置错误信息颜色
                     printf("服务器关闭连接。\n");
+                    set_console_color(15); // 恢复正常颜色
                     break;
                 }
                 else
@@ -778,12 +883,16 @@ void create_group()
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv would block\n");
+                        set_console_color(15); // 恢复正常颜色
                         continue;
                     }
                     else
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15); // 恢复正常颜色
                         break;
                     }
                 }
@@ -791,12 +900,16 @@ void create_group()
         }
         else if (select_result == 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("等待超时...\n");
+            set_console_color(15); // 恢复正常颜色
             continue;
         }
         else
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15); // 恢复正常颜色
             break;
         }
     }
@@ -817,7 +930,9 @@ void list_groups()
     encryptmsg(buffer, encrypted);
     send(client_socket, encrypted, strlen(encrypted) + 512, 0);
 
+    set_console_color(10); // 设置正常信息颜色
     printf("等待服务器响应...\n");
+    set_console_color(15); // 恢复正常颜色
 
     while (1)
     {
@@ -843,12 +958,16 @@ void list_groups()
                 {
                     decryptmsg(buffer, decrypted);
 
+                    set_console_color(10); // 设置正常信息颜色
                     printf("服务器响应: %s\n", decrypted);
-                    break; // 成功接收到数据后退出循环
+                    set_console_color(15); // 恢复正常颜色
+                    break;                 // 成功接收到数据后退出循环
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12); // 设置错误信息颜色
                     printf("服务器关闭连接。\n");
+                    set_console_color(15); // 恢复正常颜色
                     break;
                 }
                 else
@@ -856,12 +975,16 @@ void list_groups()
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv would block\n");
+                        set_console_color(15); // 恢复正常颜色
                         continue;
                     }
                     else
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15); // 恢复正常颜色
                         break;
                     }
                 }
@@ -869,12 +992,16 @@ void list_groups()
         }
         else if (select_result == 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("等待超时...\n");
+            set_console_color(15); // 恢复正常颜色
             continue;
         }
         else
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15); // 恢复正常颜色
             break;
         }
     }
@@ -911,16 +1038,22 @@ void enter_group()
 
         if (activity < 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("select 出错\n");
+            set_console_color(15); // 恢复正常颜色
             return;
         }
         else if (activity == 0)
         {
-            printf("等待服务器响应超时，正在重试...\n");
+            set_console_color(12); // 设置错误信息颜色
+            printf("等待服务器响应超时,正在重试...\n");
+            set_console_color(15); // 恢复正常颜色
             timetolive++;
             if (timetolive >= 3)
             {
-                printf("等待服务器响应超时，退出群聊\n");
+                set_console_color(12); // 设置错误信息颜色
+                printf("等待服务器响应超时,退出群聊\n");
+                set_console_color(15); // 恢复正常颜色
                 return;
             }
             continue;
@@ -938,7 +1071,9 @@ void enter_group()
                     Sleep(100);
                     continue;
                 }
+                set_console_color(12); // 设置错误信息颜色
                 printf("接收消息出错或连接已关闭\n");
+                set_console_color(15); // 恢复正常颜色
                 return;
             }
             decryptmsg(buffer, decrypted);
@@ -946,12 +1081,16 @@ void enter_group()
             // 检查是否包含成功或失败的消息
             if (strstr(decrypted, "成功") != NULL)
             {
+                set_console_color(10); // 设置正常信息颜色
                 printf("进入群聊成功\n");
+                set_console_color(15); // 恢复正常颜色
                 received_response = true;
             }
             else if (strstr(decrypted, "失败") != NULL)
             {
+                set_console_color(12); // 设置错误信息颜色
                 printf("进入群聊失败\n");
+                set_console_color(15); // 恢复正常颜色
                 return;
             }
         }
@@ -977,7 +1116,9 @@ void enter_group()
 
         if (activity < 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("select 出错\n");
+            set_console_color(15); // 恢复正常颜色
             break;
         }
 
@@ -992,14 +1133,18 @@ void enter_group()
                     Sleep(100);
                     continue;
                 }
+                set_console_color(12); // 设置错误信息颜色
                 printf("接收消息出错或连接已关闭\n");
+                set_console_color(15); // 恢复正常颜色
                 break;
             }
             memset(decrypted, 0, BUFFER_SIZE);
             buffer[bytes_received] = '\0';
             decryptmsg(buffer, decrypted);
 
+            set_console_color(10); // 设置正常信息颜色
             printf("群聊[%d]: %s\n", group_id, decrypted);
+            set_console_color(15); // 恢复正常颜色
         }
     }
 
@@ -1054,12 +1199,16 @@ void delete_group()
                     buffer[bytes_received] = '\0';
                     decryptmsg(buffer, decrypted);
 
+                    set_console_color(10); // 设置正常信息颜色
                     printf("服务器响应: %s\n", decrypted);
-                    break; // 成功接收到数据后退出循环
+                    set_console_color(15); // 恢复正常颜色
+                    break;                 // 成功接收到数据后退出循环
                 }
                 else if (bytes_received == 0)
                 {
+                    set_console_color(12); // 设置错误信息颜色
                     printf("服务器关闭连接。\n");
+                    set_console_color(15); // 恢复正常颜色
                     break;
                 }
                 else
@@ -1067,12 +1216,16 @@ void delete_group()
                     int error_code = WSAGetLastError();
                     if (error_code == WSAEWOULDBLOCK)
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv would block\n");
+                        set_console_color(15); // 恢复正常颜色
                         continue;
                     }
                     else
                     {
+                        set_console_color(12); // 设置错误信息颜色
                         printf("recv failed: %d\n", error_code);
+                        set_console_color(15); // 恢复正常颜色
                         break;
                     }
                 }
@@ -1080,12 +1233,16 @@ void delete_group()
         }
         else if (select_result == 0)
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("等待超时...\n");
+            set_console_color(15); // 恢复正常颜色
             continue;
         }
         else
         {
+            set_console_color(12); // 设置错误信息颜色
             printf("select failed: %d\n", WSAGetLastError());
+            set_console_color(15); // 恢复正常颜色
             break;
         }
     }
@@ -1096,12 +1253,17 @@ void display_group_menu()
     int choice;
     while (1)
     {
-        printf("群聊菜单:\n");
-        printf("1. 创建群聊\n");
-        printf("2. 查看群聊列表\n");
-        printf("3. 加入群聊\n");
-        printf("4. 删除群聊\n");
-        printf("5. 返回主菜单\n");
+        set_console_color(11); // Light Cyan
+        printf("╔═════════════════════════╗\n");
+        printf("║       群聊菜单          ║\n");
+        printf("╠═════════════════════════╣\n");
+        printf("║ 1. 创建群聊             ║\n");
+        printf("║ 2. 查看群聊列表         ║\n");
+        printf("║ 3. 加入群聊             ║\n");
+        printf("║ 4. 删除群聊             ║\n");
+        printf("║ 5. 返回主菜单           ║\n");
+        printf("╚═════════════════════════╝\n");
+        set_console_color(15); // White
         printf("请选择: ");
         scanf("%d", &choice);
 
@@ -1122,7 +1284,9 @@ void display_group_menu()
         case 5:
             return;
         default:
+            set_console_color(12); // Light Red
             printf("无效选择,请重新选择。\n");
+            set_console_color(15); // White
         }
     }
 }
@@ -1135,28 +1299,33 @@ void display_main_menu()
 
     while (1)
     {
-        printf("主菜单:\n");
+        set_console_color(14); // Yellow
+        printf("╔═════════════════════════╗\n");
+        printf("║        主菜单           ║\n");
+        printf("╠═════════════════════════╣\n");
         if (rsa_correct == 1 && des_correct == 1)
         {
-            printf("1. 注册\n");
-            printf("2. 登录\n");
+            printf("║ 1. 注册                 ║\n");
+            printf("║ 2. 登录                 ║\n");
         }
         if (is_logged_in == 0)
         {
-            printf("3. RSA密钥对的生成和发送\n");
+            printf("║ 3. RSA密钥对的生成和发送║\n");
             if (rsa_correct == 1)
             {
-                printf("4. 申请DES密钥\n");
+                printf("║ 4. 申请DES密钥          ║\n");
             }
         }
 
         if (is_logged_in == 1 && rsa_correct == 1 && des_correct == 1)
         {
-            printf("5. 发送消息\n");
-            printf("6. 群聊\n");
+            printf("║ 5. 发送消息             ║\n");
+            printf("║ 6. 群聊                 ║\n");
         }
 
-        printf("7. 退出\n");
+        printf("║ 7. 退出                 ║\n");
+        printf("╚═════════════════════════╝\n");
+        set_console_color(15); // White
         printf("请选择: ");
         scanf("%d", &choice);
 
@@ -1169,7 +1338,9 @@ void display_main_menu()
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("RSA密钥对未发送,DES密钥未获取,无法注册\n");
+                set_console_color(15); // White
             }
             break;
         case 2:
@@ -1179,7 +1350,9 @@ void display_main_menu()
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("您已登录或RSA密钥对未发送,DES密钥未获取\n");
+                set_console_color(15); // White
             }
             break;
         case 3:
@@ -1189,7 +1362,9 @@ void display_main_menu()
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("错误。\n");
+                set_console_color(15); // White
             }
             break;
         case 4:
@@ -1197,50 +1372,67 @@ void display_main_menu()
             {
                 if (rsa_correct == 1)
                 {
+                    set_console_color(10); // Light Green
                     printf("RSA密钥对已生成并发送,进入申请DES密钥功能\n");
+                    set_console_color(15); // White
                     // receive_des_key(client_socket);
                     receive_and_decrypt_des_key(client_socket);
                 }
                 else
                 {
+                    set_console_color(12); // Light Red
                     printf("请先进行RSA密钥对的生成和发送。\n");
+                    set_console_color(15); // White
                 }
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("请先登录。\n");
+                set_console_color(15); // White
             }
             break;
         case 5:
             if (is_logged_in == 1 && rsa_correct == 1 && des_correct == 1)
             {
-
+                set_console_color(10); // Light Green
                 printf("进入发送消息功能\n");
+                set_console_color(15); // White
                 send_message();
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("请先生成RSA密钥对生成和发送并申请DES密钥或者登录。\n");
+                set_console_color(15); // White
             }
             break;
         case 6:
             if (is_logged_in == 1 && rsa_correct == 1 && des_correct == 1)
             {
+                set_console_color(10); // Light Green
                 printf("进入群聊功能\n");
+                set_console_color(15); // White
                 display_group_menu();
             }
             else
             {
+                set_console_color(12); // Light Red
                 printf("请先生成RSA密钥对生成和发送并申请DES密钥或者登录。\n");
+                set_console_color(15); // White
             }
             break;
         case 7:
+            set_console_color(14); // Yellow
             printf("退出程序,请稍等...\n");
             Sleep(1000);
             printf("程序已退出。\n");
+            set_console_color(15); // White
             return;
         default:
+            set_console_color(12); // Light Red
             printf("无效选择,请重新选择。\n");
+            set_console_color(15); // White
         }
     }
     WaitForSingleObject(recv_thread, INFINITE);
