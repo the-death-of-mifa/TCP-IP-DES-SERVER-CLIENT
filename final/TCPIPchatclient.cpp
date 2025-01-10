@@ -934,6 +934,10 @@ void list_groups()
     printf("等待服务器响应...\n");
     set_console_color(15); // 恢复正常颜色
 
+    // 用于存储完整的服务器响应
+    char full_response[BUFFER_SIZE * 10];
+    memset(full_response, 0, sizeof(full_response));
+
     while (1)
     {
         // 清空接收缓冲区
@@ -958,10 +962,14 @@ void list_groups()
                 {
                     decryptmsg(buffer, decrypted);
 
-                    set_console_color(10); // 设置正常信息颜色
-                    printf("服务器响应: %s\n", decrypted);
-                    set_console_color(15); // 恢复正常颜色
-                    break;                 // 成功接收到数据后退出循环
+                    // 检查是否是终止标志
+                    if (strcmp(decrypted, "END_OF_MESSAGE") == 0)
+                    {
+                        break; // 终止标志，退出循环
+                    }
+
+                    // 拼接完整的服务器响应
+                    strcat(full_response, decrypted);
                 }
                 else if (bytes_received == 0)
                 {
@@ -1005,6 +1013,10 @@ void list_groups()
             break;
         }
     }
+
+    set_console_color(10);         // 设置正常信息颜色
+    printf("%s\n", full_response); // 打印完整的服务器响应
+    set_console_color(15);         // 恢复正常颜色
 }
 
 void enter_group()

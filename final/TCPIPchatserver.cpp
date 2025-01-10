@@ -361,6 +361,12 @@ void list_groups(SOCKET client_sock)
         send(client_sock, buffer, strlen(buffer), 0);
         memset(buffer, 0, sizeof(buffer));
     }
+
+    // 发送终止标志
+    char end_msg[] = "END_OF_MESSAGE";
+    encryptmsg(end_msg, end_msg);
+    send(client_sock, end_msg, strlen(end_msg), 0);
+
     mysql_free_result(result);
 }
 
@@ -780,7 +786,7 @@ void handle_events(WSAEVENT eventArray[], SOCKET sockArray[], int &nEventTotal)
                                                 }
                                                 GenerateSubKeys(); // 生成子密钥
                                                 char group_msg[BUFFER_SIZE];
-                                                sprintf(group_msg, "[群聊][用户：%s]：%s", inet_ntoa(clientAddr.sin_addr), message);
+                                                sprintf(group_msg, "[群聊][用户：%s]：%s", Gusername, message);
                                                 printf("群聊[%d]消息：%s\n", group_id, group_msg);
                                                 encryptmsg(group_msg, enbuf);
                                                 send(it->first, enbuf, strlen(enbuf), 0);
